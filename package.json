@@ -1,0 +1,26 @@
+{
+  "name": "web-tech-projekt-frontend",
+  "version": "1.0.0",
+  "description": "Frontend Repository für das Web-Tech Projekt",
+  "homepage": "https://github.com/AlexanderKalinin-HTW/Web-Tech-Projekt-Frontend#readme",
+  "bugs": {
+    "url": "https://github.com/AlexanderKalinin-HTW/Web-Tech-Projekt-Frontend/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AlexanderKalinin-HTW/Web-Tech-Projekt-Frontend.git"
+  },
+  "license": "ISC",
+  "author": "Alexander Kalinin, Ben Bartoschik",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.29.0",
+    "@babel/plugin-transform-modules-commonjs": "^7.28.6",
+    "babel-jest": "^30.3.0",
+    "jest": "^30.3.0"
+  }
+}
