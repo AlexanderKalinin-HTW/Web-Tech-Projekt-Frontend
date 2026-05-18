@@ -28,6 +28,7 @@ const transactions = [
       <option value="Rent">Rent</option>
       <option value="Income">Income</option>
       <option value="Food">Food</option>
+      <option value="Insurance">Insurance</option>
     </select>
     <button type="button" @click="save()">Save</button>
   </div>
