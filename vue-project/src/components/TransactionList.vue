@@ -3,10 +3,25 @@
 // Aufgrund der App (Butget-app) wurde sich für eine liste von
 //ausgaben und den dazugehörigen Kategorien entschieden, mit 3 beipspielen
 //und dären id´s
-import {ref} from "vue";
+import {type Ref, ref} from "vue";
+import axios from 'axios'
+import type {AxiosResponse} from 'axios'
+import type {Transaction} from "@/types.ts";
 
+const items: Ref<Transaction[]> = ref([])
 const nameField = ref('')
 const amountField = ref(0)
+
+async function loadTransactions (owner: string = '') {
+  const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL // 'http://localhost:8080' in dev mode
+  const endpoint = baseUrl + '/transactions' + '?owner=' + owner
+  const response: AxiosResponse = await axios.get(endpoint);
+  const responseData: Transaction[] = response.data;
+  responseData.forEach((thing: Transaction) => {
+    items.value.push(thing)
+  })
+}
+
 
 const transactions = [
   { id: 1, title: 'Miete', amount: -800, category: 'Wohnen' },
