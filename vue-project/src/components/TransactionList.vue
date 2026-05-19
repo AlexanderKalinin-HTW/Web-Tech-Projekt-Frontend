@@ -22,7 +22,7 @@ const transactions = [
   <div>
     <h2>Transactions</h2>
     <input v-model="nameField" placeholder="Transaction" type="text">
-    <input v-model="amountField" placeholder="Amount" @keyup.enter="save()">
+    <input v-model="amountField" placeholder="Amount">
     <!-- select: hier wird ein dropdown feld definiert -->
     <select>category="expense-type"
       <option value="Rent">Rent</option>
@@ -30,7 +30,7 @@ const transactions = [
       <option value="Food">Food</option>
       <option value="Insurance">Insurance</option>
     </select>
-    <button type="button" @click="save()">Save</button>
+    <button type="button">Save</button>
   </div>
   <div>
     <!-- div ist ein kontainer -->
