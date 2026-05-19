@@ -17,18 +17,18 @@ async function loadTransactions (owner: string = '') {
   const endpoint = baseUrl + '/transactions' + '?owner=' + owner
   const response: AxiosResponse = await axios.get(endpoint);
   const responseData: Transaction[] = response.data;
-  responseData.forEach((thing: Transaction) => {
-    items.value.push(thing)
+  responseData.forEach((transaction: Transaction) => {
+    items.value.push(transaction)
   })
 }
 
 
-const transactions = [
+/*const transactions = [
   { id: 1, title: 'Miete', amount: -800, category: 'Wohnen' },
   { id: 2, title: 'Gehalt', amount: 1500, category: 'Einnahmen' },
   { id: 3, title: 'Lebensmittel', amount: -120, category: 'Essen' },
 ]
-
+*/
 </script>
 
 <!-- script: hier wird  die ausgabe difiniert -->
@@ -59,13 +59,13 @@ const transactions = [
         </tr>
       </thead>
       <tbody>
-      <tr v-if="transactions.length === 0">
+      <tr v-if="items.length === 0">
         <td colspan="3">No transactions yet</td>
       </tr>
-      <tr v-for="transaction in transactions" :key="transaction.id">
-        <td> {{ transaction.title }}</td>
-        <td>{{ transaction.amount }}€</td>
-        <td>({{ transaction.category }})</td>
+      <tr v-for="item in items" :key="item.id">
+        <td> {{ item.title }}</td>
+        <td>{{ item.amount }}€</td>
+        <td>({{ item.category }})</td>
       </tr>
       </tbody>
     </table>

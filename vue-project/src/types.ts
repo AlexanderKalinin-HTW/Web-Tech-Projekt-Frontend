@@ -1,1 +1,1 @@
-export type Transaction = { id?: number, name: string, amount: number, owner: string }
+export type Transaction = { id?: number, title: string, amount: number, category: string, owner: string }
