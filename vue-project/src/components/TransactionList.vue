@@ -3,17 +3,22 @@
 // Aufgrund der App (Butget-app) wurde sich für eine liste von
 //ausgaben und den dazugehörigen Kategorien entschieden, mit 3 beipspielen
 //und dären id´s
-import {type Ref, ref} from "vue";
+import {onMounted, type Ref, ref} from "vue";
 import axios from 'axios'
 import type {AxiosResponse} from 'axios'
 import type {Transaction} from "@/types.ts";
+import { useAuth } from '@okta/okta-vue'
+import type {UserClaims} from '@okta/okta-auth-js'
 
 const items: Ref<Transaction[]> = ref([])
 const nameField = ref('')
 const amountField = ref(0)
 
+const $auth = useAuth()
+const email = ref('')
+
 async function loadTransactions (owner: string = '') {
-  const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL // 'http://localhost:8080' in dev mode
+  const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL
   const endpoint = baseUrl + '/transactions' + '?owner=' + owner
   const response: AxiosResponse = await axios.get(endpoint);
   const responseData: Transaction[] = response.data;
@@ -22,13 +27,19 @@ async function loadTransactions (owner: string = '') {
   })
 }
 
+onMounted(async () => {
+  let userClaims: UserClaims | undefined = undefined
+  try {
+    userClaims = await $auth.getUser()
+  } catch (e) {
+    console.log('Error:', e)
+  }
+  const owner = (userClaims === undefined || userClaims.email === undefined) ? '' : userClaims.email.toString()
+  email.value = owner
+  console.log(owner)
+  await loadTransactions(owner)
 
-/*const transactions = [
-  { id: 1, title: 'Miete', amount: -800, category: 'Wohnen' },
-  { id: 2, title: 'Gehalt', amount: 1500, category: 'Einnahmen' },
-  { id: 3, title: 'Lebensmittel', amount: -120, category: 'Essen' },
-]
-*/
+})
 </script>
 
 <!-- script: hier wird  die ausgabe difiniert -->
