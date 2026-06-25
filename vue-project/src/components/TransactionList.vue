@@ -20,15 +20,22 @@ const email = ref('')
 
 // GET: Transaktionen laden, gefiltert nach Owner
 async function loadTransactions(owner: string = '') {
+  if(!owner) {
+    items.value = []
+    return
+  }
   const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL
-  const response: AxiosResponse = await axios.get(baseUrl + '/transactions?owner=' + owner)
+  const response: AxiosResponse = await axios.get(`${baseUrl}/transactions?owner=` + owner)
   items.value = response.data
 }
 
 // POST: Neue Transaktion speichern und Liste neu laden
 async function saveTransaction() {
+  if(!email.value){
+    return
+  }
   const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL
-  await axios.post(baseUrl + '/transactions', {
+  await axios.post(`${baseUrl}/transactions`, {
     title: nameField.value,
     amount: amountField.value,
     category: categoryField.value,
@@ -46,6 +53,9 @@ onMounted(async () => {
   let userClaims: UserClaims | undefined = undefined
   try {
     userClaims = await $auth.getUser()
+    if(!userClaims.email){
+      return
+    }
   } catch (e) {
     console.log('Error:', e)
   }
@@ -57,6 +67,7 @@ onMounted(async () => {
 
 <template>
   <h1>Budget-App</h1>
+  <p v-if="email">Signed in as: {{ email }}</p>
   <div>
     <h2>Transactions</h2>
     <!-- v-model bindet Inputfelder an die jeweiligen Variablen -->
