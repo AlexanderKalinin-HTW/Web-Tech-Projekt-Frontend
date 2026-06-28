@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {onMounted, type Ref, ref} from "vue";
+import {computed, onMounted, type Ref, ref} from "vue";
 import axios from 'axios'
 import type {AxiosResponse} from 'axios'
 import type {Transaction} from "@/types.ts";
@@ -13,6 +13,22 @@ const items: Ref<Transaction[]> = ref([])
 const nameField = ref('')
 const amountField = ref(0)
 const categoryField = ref('Income')
+
+// Kategorie-Filter: '' = alle Kategorien anzeigen, sonst nur die gewählte.
+// filteredItems und totalSum sind computed — sie aktualisieren sich automatisch
+// wenn sich items oder filterCategory ändern, ohne einen neuen Backend-Call.
+const filterCategory = ref('')
+const filteredItems = computed(() =>
+  filterCategory.value === '' ? items.value : items.value.filter(i => i.category === filterCategory.value)
+)
+const totalSum = computed(() =>
+  filteredItems.value.reduce((sum, i) => sum + i.amount, 0)
+)
+
+// Edit-Modus: null = Create-Modus (POST), Zahl = ID der zu bearbeitenden Transaktion (PUT).
+// Das Formular oben ist dasselbe für beide Modi — editingId entscheidet,
+// welcher Request beim Klick auf Save abgeschickt wird.
+const editingId = ref<number | null>(null)
 
 // Okta Auth für eingeloggten User
 const $auth = useAuth()
@@ -29,22 +45,46 @@ async function loadTransactions(owner: string = '') {
   items.value = response.data
 }
 
-// POST: Neue Transaktion speichern und Liste neu laden
-async function saveTransaction() {
-  if(!email.value){
-    return
-  }
+// Zeile anklicken: Formular mit den Werten der Transaktion befüllen und Edit-Modus aktivieren
+function selectForEdit(item: Transaction) {
+  editingId.value = item.id
+  nameField.value = item.title
+  amountField.value = item.amount
+  categoryField.value = item.category
+}
+
+// Edit-Modus verlassen und Formular zurücksetzen
+function cancelEdit() {
+  editingId.value = null
+  nameField.value = ''
+  amountField.value = 0
+  categoryField.value = 'Income'
+}
+
+// DELETE: Transaktion anhand der ID löschen und Liste danach neu laden
+async function deleteTransaction(id: number) {
   const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL
-  await axios.post(`${baseUrl}/transactions`, {
+  await axios.delete(`${baseUrl}/transactions/${id}`)
+  if (editingId.value === id) cancelEdit()
+  await loadTransactions(email.value)
+}
+
+// POST oder PUT: abhängig von editingId wird eine neue Transaktion erstellt oder eine bestehende aktualisiert
+async function saveTransaction() {
+  if(!email.value) return
+  const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL
+  const body = {
     title: nameField.value,
     amount: amountField.value,
     category: categoryField.value,
     owner: email.value
-  })
-  // Formular zurücksetzen
-  nameField.value = ''
-  amountField.value = 0
-  // Liste aktualisieren
+  }
+  if (editingId.value !== null) {
+    await axios.put(`${baseUrl}/transactions/${editingId.value}`, body)
+  } else {
+    await axios.post(`${baseUrl}/transactions`, body)
+  }
+  cancelEdit()
   await loadTransactions(email.value)
 }
 
@@ -80,8 +120,20 @@ onMounted(async () => {
       <option value="Food">Food</option>
       <option value="Insurance">Insurance</option>
     </select>
-    <!-- @click ruft saveTransaction auf wenn der Button gedrückt wird -->
-    <button type="button" @click="saveTransaction">Save</button>
+    <!-- Im Edit-Modus steht auf dem Button "Update", sonst "Save" -->
+    <button type="button" @click="saveTransaction">{{ editingId !== null ? 'Update' : 'Save' }}</button>
+    <button v-if="editingId !== null" type="button" @click="cancelEdit">Cancel</button>
+  </div>
+  <div>
+    <label>Filter: </label>
+    <select v-model="filterCategory">
+      <option value="">All</option>
+      <option value="Income">Income</option>
+      <option value="Rent">Rent</option>
+      <option value="Food">Food</option>
+      <option value="Insurance">Insurance</option>
+    </select>
+    <span>Total: {{ totalSum.toFixed(2) }}€</span>
   </div>
   <table>
     <thead>
@@ -89,18 +141,20 @@ onMounted(async () => {
       <th>Transaction</th>
       <th>Amount</th>
       <th>Category</th>
+      <th></th>
     </tr>
     </thead>
     <tbody>
     <!-- Fallback wenn keine Transaktionen vorhanden -->
-    <tr v-if="items.length === 0">
-      <td colspan="3">No transactions yet</td>
+    <tr v-if="filteredItems.length === 0">
+      <td colspan="4">No transactions yet</td>
     </tr>
-    <!-- v-for rendert eine Zeile pro Transaktion -->
-    <tr v-for="item in items" :key="item.id">
+    <!-- Klick auf die Zeile öffnet den Edit-Modus; Delete-Button stoppt die Weitergabe des Klick-Events -->
+    <tr v-for="item in filteredItems" :key="item.id" @click="selectForEdit(item)" style="cursor: pointer;">
       <td>{{ item.title }}</td>
       <td>{{ item.amount }}€</td>
       <td>({{ item.category }})</td>
+      <td><button type="button" @click.stop="deleteTransaction(item.id)">Delete</button></td>
     </tr>
     </tbody>
   </table>
