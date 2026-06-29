@@ -34,15 +34,23 @@ const editingId = ref<number | null>(null)
 const $auth = useAuth()
 const email = ref('')
 
+// Fehlermeldung für fehlgeschlagene API-Calls — wird im Template über der Tabelle angezeigt
+const errorMessage = ref('')
+
 // GET: Transaktionen laden, gefiltert nach Owner
 async function loadTransactions(owner: string = '') {
   if(!owner) {
     items.value = []
     return
   }
-  const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL
-  const response: AxiosResponse = await axios.get(`${baseUrl}/transactions?owner=` + owner)
-  items.value = response.data
+  try {
+    const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL
+    const response: AxiosResponse = await axios.get(`${baseUrl}/transactions?owner=` + owner)
+    items.value = response.data
+  } catch (e) {
+    console.error('Fehler beim Laden der Transaktionen:', e)
+    errorMessage.value = 'Transaktionen konnten nicht geladen werden.'
+  }
 }
 
 // Zeile anklicken: Formular mit den Werten der Transaktion befüllen und Edit-Modus aktivieren
@@ -63,29 +71,41 @@ function cancelEdit() {
 
 // DELETE: Transaktion anhand der ID löschen und Liste danach neu laden
 async function deleteTransaction(id: number) {
-  const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL
-  await axios.delete(`${baseUrl}/transactions/${id}`)
-  if (editingId.value === id) cancelEdit()
-  await loadTransactions(email.value)
+  errorMessage.value = ''
+  try {
+    const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL
+    await axios.delete(`${baseUrl}/transactions/${id}`)
+    if (editingId.value === id) cancelEdit()
+    await loadTransactions(email.value)
+  } catch (e) {
+    console.error('Fehler beim Löschen der Transaktion:', e)
+    errorMessage.value = 'Transaktion konnte nicht gelöscht werden.'
+  }
 }
 
 // POST oder PUT: abhängig von editingId wird eine neue Transaktion erstellt oder eine bestehende aktualisiert
 async function saveTransaction() {
   if(!email.value) return
-  const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL
-  const body = {
-    title: nameField.value,
-    amount: amountField.value,
-    category: categoryField.value,
-    owner: email.value
+  errorMessage.value = ''
+  try {
+    const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL
+    const body = {
+      title: nameField.value,
+      amount: amountField.value,
+      category: categoryField.value,
+      owner: email.value
+    }
+    if (editingId.value !== null) {
+      await axios.put(`${baseUrl}/transactions/${editingId.value}`, body)
+    } else {
+      await axios.post(`${baseUrl}/transactions`, body)
+    }
+    cancelEdit()
+    await loadTransactions(email.value)
+  } catch (e) {
+    console.error('Fehler beim Speichern der Transaktion:', e)
+    errorMessage.value = 'Transaktion konnte nicht gespeichert werden.'
   }
-  if (editingId.value !== null) {
-    await axios.put(`${baseUrl}/transactions/${editingId.value}`, body)
-  } else {
-    await axios.post(`${baseUrl}/transactions`, body)
-  }
-  cancelEdit()
-  await loadTransactions(email.value)
 }
 
 // Beim Laden: User aus Okta holen und Transaktionen abrufen
@@ -94,10 +114,12 @@ onMounted(async () => {
   try {
     userClaims = await $auth.getUser()
     if(!userClaims.email){
+      errorMessage.value = 'Anmeldung erfolgreich, aber kein E-Mail-Claim vorhanden. Bitte Okta-Konfiguration prüfen.'
       return
     }
   } catch (e) {
-    console.log('Error:', e)
+    console.error('Fehler beim Laden des Okta-Users:', e)
+    errorMessage.value = 'Benutzer konnte nicht geladen werden.'
   }
   const owner = (userClaims === undefined || userClaims.email === undefined) ? '' : userClaims.email.toString()
   email.value = owner
@@ -112,7 +134,7 @@ onMounted(async () => {
     <h2>Transactions</h2>
     <!-- v-model bindet Inputfelder an die jeweiligen Variablen -->
     <input v-model="nameField" placeholder="Transaction" type="text">
-    <input v-model="amountField" placeholder="Amount" type="number">
+    <input v-model.number="amountField" placeholder="Amount" type="number">
     <!-- Dropdown für Kategorie, gebunden an categoryField -->
     <select v-model="categoryField">
       <option value="Income">Income</option>
@@ -135,6 +157,7 @@ onMounted(async () => {
     </select>
     <span>Total: {{ totalSum.toFixed(2) }}€</span>
   </div>
+  <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
   <table>
     <thead>
     <tr>
@@ -182,5 +205,10 @@ td {
   width: 33.33%;
   padding: 0.5rem 1rem;
   text-align: center;
+}
+.error {
+  color: red;
+  text-align: center;
+  margin-top: 1rem;
 }
 </style>
