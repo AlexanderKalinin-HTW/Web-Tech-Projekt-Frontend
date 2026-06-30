@@ -24,6 +24,9 @@ const filteredItems = computed(() =>
 const totalSum = computed(() =>
   filteredItems.value.reduce((sum, i) => sum + i.amount, 0)
 )
+const overallTotal = computed(() =>
+  items.value.reduce((sum, i) => sum + i.amount, 0)
+)
 
 // Edit-Modus: null = Create-Modus (POST), Zahl = ID der zu bearbeitenden Transaktion (PUT).
 // Das Formular oben ist dasselbe für beide Modi — editingId entscheidet,
@@ -130,6 +133,7 @@ onMounted(async () => {
 <template>
   <h1>Budget-App</h1>
   <p v-if="email">Signed in as: {{ email }}</p>
+  <p v-if="email" class="balance">Gesamtsaldo: {{ overallTotal.toFixed(2) }}€</p>
   <div>
     <h2>Transactions</h2>
     <!-- v-model bindet Inputfelder an die jeweiligen Variablen -->
@@ -205,6 +209,12 @@ td {
   width: 33.33%;
   padding: 0.5rem 1rem;
   text-align: center;
+}
+.balance {
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-top: 0.5rem;
 }
 .error {
   color: red;

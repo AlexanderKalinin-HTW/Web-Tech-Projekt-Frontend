@@ -88,6 +88,25 @@ describe('TransactionList', () => {
     expect(wrapper.find('button[type="button"]').text()).toBe('Update')
   })
 
+  it('zeigt korrekten Gesamtsaldo unabhängig vom Kategorie-Filter', async () => {
+    vi.mocked(axios.get).mockResolvedValueOnce({
+      data: [
+        { id: 1, title: 'Gehalt', amount: 1000, category: 'Income', owner: 'test@test.de' },
+        { id: 2, title: 'Miete', amount: -400, category: 'Rent', owner: 'test@test.de' },
+      ],
+    })
+
+    const wrapper = mount(TransactionList)
+    await flushPromises()
+
+    expect(wrapper.find('.balance').text()).toContain('600.00')
+
+    // Kategorie-Filter auf "Income" setzen — Gesamtsaldo bleibt unverändert
+    await wrapper.findAll('select')[1].setValue('Income')
+
+    expect(wrapper.find('.balance').text()).toContain('600.00')
+  })
+
   it('ruft axios.delete mit korrekter ID auf und löst keinen Edit-Modus aus', async () => {
     // ID 7 statt 1 — macht den URL-Assertion eindeutig, kein Zufallstreffer möglich
     vi.mocked(axios.get).mockResolvedValueOnce({
