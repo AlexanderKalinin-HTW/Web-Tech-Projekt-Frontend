@@ -49,7 +49,7 @@ describe('TransactionList', () => {
     // [1] wäre der Kategorie-Filter (zweites select im Template)
     await wrapper.find('input[placeholder="Transaction"]').setValue('Miete')
     await wrapper.find('input[placeholder="Amount"]').setValue('850')
-    await wrapper.findAll('select')[0].setValue('Rent')
+    await wrapper.findAll('select')[0]!.setValue('Rent')
 
     // Save-Button klicken und axios.post + folgendes loadTransactions abwarten
     await wrapper.find('button[type="button"]').trigger('click')
@@ -80,9 +80,9 @@ describe('TransactionList', () => {
     await wrapper.find('tbody tr').trigger('click')
 
     // Formularfelder prüfen: DOM-Werte sind immer Strings, auch bei type="number"
-    expect(wrapper.find('input[placeholder="Transaction"]').element.value).toBe('Miete')
-    expect(wrapper.find('input[placeholder="Amount"]').element.value).toBe('850')
-    expect((wrapper.findAll('select')[0].element as HTMLSelectElement).value).toBe('Rent')
+    expect((wrapper.find('input[placeholder="Transaction"]').element as HTMLInputElement).value).toBe('Miete')
+    expect((wrapper.find('input[placeholder="Amount"]').element as HTMLInputElement).value).toBe('850')
+    expect((wrapper.findAll('select')[0]!.element as HTMLSelectElement).value).toBe('Rent')
 
     // editingId ist jetzt gesetzt → Button-Text wechselt von "Save" zu "Update"
     expect(wrapper.find('button[type="button"]').text()).toBe('Update')
@@ -102,7 +102,7 @@ describe('TransactionList', () => {
     expect(wrapper.find('.balance').text()).toContain('600.00')
 
     // Kategorie-Filter auf "Income" setzen — Gesamtsaldo bleibt unverändert
-    await wrapper.findAll('select')[1].setValue('Income')
+    await wrapper.findAll('select')[1]!.setValue('Income')
 
     expect(wrapper.find('.balance').text()).toContain('600.00')
   })
@@ -125,7 +125,7 @@ describe('TransactionList', () => {
     expect(axios.delete).toHaveBeenCalledWith(expect.stringContaining('/transactions/7'))
 
     // Edit-Modus wurde NICHT ausgelöst: Formular leer, Button-Text noch "Save"
-    expect(wrapper.find('input[placeholder="Transaction"]').element.value).toBe('')
+    expect((wrapper.find('input[placeholder="Transaction"]').element as HTMLInputElement).value).toBe('')
     expect(wrapper.find('button[type="button"]').text()).toBe('Save')
   })
 })
